@@ -1,0 +1,44 @@
+name: Build Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Get project
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Install Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: Extract project
+        run: |
+          ZIP=$(find . -maxdepth 1 -name '*.zip' -print -quit)
+          if [ -z "$ZIP" ]; then
+            echo "ZIP file not found"
+            exit 1
+          fi
+          unzip -o "$ZIP" -d project
+
+      - name: Build APK
+        run: gradle -p project/RetourVoixAndroid assembleDebug
+
+      - name: Save APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: RetourVoix-debug
+          path: project/RetourVoixAndroid/app/build/outputs/apk/debug/*.apk
